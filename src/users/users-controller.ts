@@ -54,5 +54,11 @@ export const userController = async (app: FastifyInstance) => {
     })
 
     // TODO: Implement the route to get all user registered
-    app.get('/', async (request, response) => { })
+    app.get('/', async (request, response) => {
+        // TODO: Load all users from the database
+        const users = await knex('users').select();
+
+        // TODO: Return success response with all users information
+        return response.status(200).send({ users });
+    })
 }
