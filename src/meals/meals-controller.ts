@@ -102,6 +102,65 @@ export const mealsController = async (app: FastifyInstance) => {
             _invalidBodyInRequestHandler(response, error);
         }
     })
+
+    // TODO: Implement the endpoint to update a meal by ID
+    app.put('/:id', { preHandler: extractSessionIdFromCookie }, async (request: FastifyRequest, response: FastifyReply) => {
+        // TODO: Validate meal ID from request parameters
+        const getMealIdParamSchema = z.object({
+            id: z.string().uuid()
+        })
+
+        // TODO: Validate meal data from request body
+        const createMealsBodySchema = z.object({
+            name: z.string(),
+            description: z.string(),
+            date: z.string(),
+            isInDiet: z.boolean()
+        })
+
+        try {
+            // TODO: Extract meal ID from request parameters
+            const { id } = getMealIdParamSchema.parse(request.params);
+
+            // TODO: Extract meal data from request body
+            const { name, description, date, isInDiet } = createMealsBodySchema.parse(request.body);
+
+            // TODO: Extract user ID from request
+            const userId = request.user?.id;
+
+            // TODO: Load meal from the database by ID and user ID
+            const mealToUpdate = await knex('meals').where({ id }).select().first();
+
+            // TODO: Validate if the meal exists and belongs to the user
+            if (mealToUpdate && mealToUpdate.user_id === userId) {
+                // TODO: If the meal exists and belongs to the user, update the meal data
+                await knex('meals').where({ id }).andWhere({ user_id: userId }).update({
+                    name,
+                    description,
+                    date,
+                    is_in_diet: isInDiet,
+                }).then(async () => {
+                    // TODO: Load meal from the database
+                    const mealUpdated = await knex('meals').where('id', id).select().first();
+
+                    // TODO: Return success response with meal information
+                    return response.status(200).send({ meal: mealUpdated });
+
+                }).catch((error) => {
+                    console.error('Error updating meal', error);
+                    return response.status(500).send({
+                        title: 'Internal Server Error',
+                        message: 'Error updating meal, please try again later!'
+                    })
+                })
+            } else {
+                // TODO: If the meal does not exist or does not belong to the user, return error response
+                return response.status(403).send({ message: "You don't have permission to update this meal" });
+            }
+        } catch (error) {
+            _invalidBodyInRequestHandler(response, error);
+        }
+    })
 }
 
 const _invalidBodyInRequestHandler = (response: FastifyReply, error: unknown) => {
