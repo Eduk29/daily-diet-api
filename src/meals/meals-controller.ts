@@ -161,6 +161,47 @@ export const mealsController = async (app: FastifyInstance) => {
             _invalidBodyInRequestHandler(response, error);
         }
     })
+
+    // TODO: Implement the endpoint to delete a meal by ID
+    app.delete('/:id/delete', { preHandler: extractSessionIdFromCookie }, async (request: FastifyRequest, response: FastifyReply) => {
+        // TODO: Validate meal ID from request parameters
+        const getMealIdParamSchema = z.object({
+            id: z.string().uuid()
+        })
+
+        try {
+            // TODO: Extract meal ID from request parameters
+            const { id } = getMealIdParamSchema.parse(request.params);
+
+            // TODO: Extract user ID from request
+            const userId = request.user?.id;
+
+            // TODO: Load meal from the database by ID and user ID
+            const meal = await knex('meals').where({ id }).select().first();
+
+            // TODO: Validate if the meal exists and belongs to the user
+            if (meal && meal.user_id === userId) {
+                // TODO: If the meal exists and belongs to the user, delete the meal
+                await knex('meals').where({ id }).andWhere({ user_id: userId }).delete().catch((error) => {
+                    console.error('Error deleting meal', error);
+                    return response.status(500).send({
+                        title: 'Internal Server Error',
+                        message: 'Error deleting meal, please try again later!'
+                    })
+                });
+
+                // TODO: Return success response with no content
+                return response.status(204).send({});
+
+            } else {
+                // TODO: If the meal does not exist or does not belong to the user, return error response
+                return response.status(403).send({ message: "You don't have permission to delete this meal" });
+            }
+
+        } catch (error) {
+            _invalidBodyInRequestHandler(response, error);
+        }
+    })
 }
 
 const _invalidBodyInRequestHandler = (response: FastifyReply, error: unknown) => {
