@@ -202,6 +202,56 @@ export const mealsController = async (app: FastifyInstance) => {
             _invalidBodyInRequestHandler(response, error);
         }
     })
+
+    // TODO: Implement the endpoint to summarize the meals created by the user
+    app.get('/summary', { preHandler: extractSessionIdFromCookie }, async (request: FastifyRequest, response: FastifyReply) => {
+        // TODO: Extract user ID from request
+        const userId = request.user?.id;
+
+        // TODO: Load all meals from the database by the user
+        await knex('meals').where('user_id', userId).select().then((meals) => {
+            // TODO: Calculate the total number of meals created by the user
+            const totalMeals = meals.length;
+
+            // TODO: Calculate the total number of meals that are in the diet
+            const mealsOnDiet = _calculateMealsInDiet(meals);
+
+            // TODO: Calculate the total number of meals that are not in the diet
+            const mealsNotOnDiet = _calculateMealsNotInDiet(meals);
+
+            // TODO: Calculate the best sequence of meals in diet created by the user
+            const bestSequenceOfMealsInDiet = _calculateBestSequenceOfMealsInDiet(meals);
+
+            // TODO: Return success response with the summary information
+            return response.status(200).send({ totalMeals: meals.length, mealsOnDiet: mealsOnDiet.length, mealsNotOnDiet: mealsNotOnDiet.length, bestSequenceOfMealsInDiet });
+        }).catch((error) => {
+            _invalidBodyInRequestHandler(response, error);
+        });
+    })
+}
+
+const _calculateMealsInDiet = (meals: any[]) => {
+    return meals.filter((meal) => meal.is_in_diet);
+}
+
+const _calculateMealsNotInDiet = (meals: any[]) => {
+    return meals.filter((meal) => !meal.is_in_diet);
+}
+
+const _calculateBestSequenceOfMealsInDiet = (meals: any[]) => {
+    const { onDietSequence } = meals.reduce(
+        (acc, meal) => {
+            acc.currentSequence = meal.is_in_diet ? acc.currentSequence + 1 : 0;
+
+            if (acc.currentSequence > acc.onDietSequence) {
+                acc.onDietSequence = acc.currentSequence
+            }
+            return acc
+        },
+        { onDietSequence: 0, currentSequence: 0 },
+    )
+
+    return onDietSequence;
 }
 
 const _invalidBodyInRequestHandler = (response: FastifyReply, error: unknown) => {
